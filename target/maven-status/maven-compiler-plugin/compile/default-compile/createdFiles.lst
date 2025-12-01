@@ -1,0 +1,15 @@
+com/tasktracker/framework/storage/ResourceStorageClient.class
+com/tasktracker/impl/validators/TaskValidator.class
+com/tasktracker/TaskTrackerApplication.class
+com/tasktracker/framework/validators/ValidationException.class
+com/tasktracker/config/GlobalExceptionHandler.class
+com/tasktracker/framework/models/Collection.class
+com/tasktracker/impl/models/TaskStatus.class
+com/tasktracker/impl/models/TaskPriority.class
+com/tasktracker/impl/storage/TaskStore.class
+com/tasktracker/framework/models/Entity.class
+com/tasktracker/impl/controllers/TaskResource.class
+com/tasktracker/framework/validators/ResourceValidator.class
+com/tasktracker/impl/models/Task.class
+com/tasktracker/framework/storage/InMemoryStore.class
+com/tasktracker/framework/validators/SchemaValidator.class

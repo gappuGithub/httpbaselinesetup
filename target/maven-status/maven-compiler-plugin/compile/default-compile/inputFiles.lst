@@ -1,0 +1,15 @@
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/validators/ValidationException.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/storage/InMemoryStore.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/config/GlobalExceptionHandler.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/storage/ResourceStorageClient.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/validators/ResourceValidator.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/models/TaskPriority.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/models/Task.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/validators/TaskValidator.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/models/Collection.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/TaskTrackerApplication.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/models/TaskStatus.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/controllers/TaskResource.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/models/Entity.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/impl/storage/TaskStore.java
+/Users/viagniho/Desktop/Practice/rplg/src/main/java/com/tasktracker/framework/validators/SchemaValidator.java
