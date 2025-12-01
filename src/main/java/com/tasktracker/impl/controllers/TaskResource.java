@@ -57,11 +57,15 @@ public class TaskResource {
                     // Replace existing task (upsert behavior)
                     Task updatedTask = taskStore.update(task.getId(), task).orElse(task);
                     return ResponseEntity.ok(updatedTask);
+                } else {
+                    // ID provided but doesn't exist - return error
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Task not found with ID: " + task.getId());
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
                 }
-                // ID provided but doesn't exist - create with this ID
             }
             
-            // Create new task (ID will be generated if not provided)
+            // No ID provided - create new task (ID will be auto-generated)
             Task createdTask = taskStore.create(task);
             
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);

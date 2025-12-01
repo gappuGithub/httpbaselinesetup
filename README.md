@@ -107,17 +107,17 @@ curl http://localhost:8080/tasks/health
 
 ---
 
-### 1. Create a Task (or Replace if ID provided)
+### 1. Create a Task (or Replace if ID Exists)
 
 **Endpoint:** `POST /tasks`
 
 The endpoint supports UPSERT behavior:
-- **No ID provided** → Creates new task with auto-generated UUID
-- **ID provided + doesn't exist** → Creates task with the specified ID
-- **ID provided + exists** → Replaces the existing task (returns 200)
+- **No ID provided** → Creates new task with auto-generated UUID (201 Created)
+- **ID provided + exists** → Replaces the existing task (200 OK)
+- **ID provided + doesn't exist** → Returns 404 error (IDs are auto-generated only)
 
 ```bash
-# Create new task (ID will be generated)
+# Create new task (ID will be auto-generated)
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{
@@ -127,38 +127,46 @@ curl -X POST http://localhost:8080/tasks \
     "priority": "HIGH"
   }'
 
-# Create or replace with specific ID
+# Replace existing task (UPSERT - ID must exist)
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{
-    "id": "custom-id-123",
-    "title": "Task with Custom ID",
-    "status": "TODO",
-    "priority": "HIGH"
+    "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+    "title": "Updated Task",
+    "status": "DONE",
+    "priority": "LOW"
   }'
+# Returns 200 OK if ID exists, 404 if ID doesn't exist
 ```
 
 **Response (201 Created):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+  "createdAt": 1764550881793,
+  "updatedAt": 1764550881793,
   "title": "Implement REST API",
   "description": "Build the task tracker API with Spring Boot",
   "status": "TODO",
-  "priority": "HIGH",
-  "createdAt": 1701345600000,
-  "updatedAt": 1701345600000
+  "priority": "HIGH"
 }
 ```
 **Note**: Timestamps are in epoch time (milliseconds since January 1, 1970 UTC)
 
-**Validation Error (400 Bad Request):**
+**Error Responses:**
+
 ```json
+// Validation Error (400 Bad Request)
 {
   "error": "Validation failed",
   "details": {
     "title": "Title is required"
   }
+}
+
+// ID Not Found (404 Not Found) - when trying to create with non-existent ID
+{
+  "error": "Task not found with ID: invalid-id-123"
 }
 ```
 
@@ -175,13 +183,13 @@ curl http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000
 **Response (200 OK):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+  "createdAt": 1764550881793,
+  "updatedAt": 1764550881793,
   "title": "Implement REST API",
   "description": "Build the task tracker API with Spring Boot",
   "status": "TODO",
-  "priority": "HIGH",
-  "createdAt": 1701345600000,
-  "updatedAt": 1701345600000
+  "priority": "HIGH"
 }
 ```
 
@@ -199,34 +207,38 @@ curl http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000
 **Endpoint:** `GET /tasks?ids=...`
 
 ```bash
-# Option 1: Comma-separated IDs
-curl "http://localhost:8080/tasks?ids=550e8400-e29b-41d4-a716-446655440000,660e8400-e29b-41d4-a716-446655440001,non-existent-id"
+# Comma-separated IDs (recommended)
+curl "http://localhost:8080/tasks?ids=607ffb52-c83f-41e0-bcc4-9fe8b2817453,4c40d503-cabf-45a3-8f23-a85c338e27a8,invalid-id"
 
-# Option 2: Multiple id parameters
-curl "http://localhost:8080/tasks?ids=550e8400-e29b-41d4-a716-446655440000&ids=660e8400-e29b-41d4-a716-446655440001&ids=non-existent-id"
+# Multiple id parameters (also works)
+curl "http://localhost:8080/tasks?ids=607ffb52-c83f-41e0-bcc4-9fe8b2817453&ids=4c40d503-cabf-45a3-8f23-a85c338e27a8&ids=invalid-id"
 ```
 
 **Response (200 OK):**
 ```json
 {
   "results": {
-    "550e8400-e29b-41d4-a716-446655440000": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
+    "607ffb52-c83f-41e0-bcc4-9fe8b2817453": {
+      "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+      "createdAt": 1764550881793,
+      "updatedAt": 1764550881793,
       "title": "Implement REST API",
+      "description": "Build the task tracker API",
       "status": "TODO",
-      "priority": "HIGH",
-      ...
+      "priority": "HIGH"
     },
-    "660e8400-e29b-41d4-a716-446655440001": {
-      "id": "660e8400-e29b-41d4-a716-446655440001",
-      "title": "Write tests",
+    "4c40d503-cabf-45a3-8f23-a85c338e27a8": {
+      "id": "4c40d503-cabf-45a3-8f23-a85c338e27a8",
+      "createdAt": 1764550882163,
+      "updatedAt": 1764550882163,
+      "title": "Write Tests",
+      "description": null,
       "status": "TODO",
-      "priority": "MEDIUM",
-      ...
+      "priority": "MEDIUM"
     }
   },
   "errors": {
-    "non-existent-id": 404
+    "invalid-id": 404
   }
 }
 ```
@@ -254,23 +266,27 @@ curl "http://localhost:8080/tasks/all?status=IN_PROGRESS&priority=HIGH"
 **Response (200 OK):**
 ```json
 {
+  "count": 2,
   "tasks": [
     {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+      "createdAt": 1764550881793,
+      "updatedAt": 1764550881793,
       "title": "Implement REST API",
+      "description": "Build the task tracker API",
       "status": "TODO",
-      "priority": "HIGH",
-      ...
+      "priority": "HIGH"
     },
     {
-      "id": "660e8400-e29b-41d4-a716-446655440001",
-      "title": "Write tests",
+      "id": "4c40d503-cabf-45a3-8f23-a85c338e27a8",
+      "createdAt": 1764550882163,
+      "updatedAt": 1764550882163,
+      "title": "Write Tests",
+      "description": null,
       "status": "TODO",
-      "priority": "MEDIUM",
-      ...
+      "priority": "MEDIUM"
     }
-  ],
-  "count": 2
+  ]
 }
 ```
 
@@ -285,34 +301,35 @@ Protected fields (`id`, `createdAt`) are ignored if included.
 
 ```bash
 # Update status only
-curl -X PATCH http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000 \
+curl -X PATCH http://localhost:8080/tasks/607ffb52-c83f-41e0-bcc4-9fe8b2817453 \
   -H "Content-Type: application/json" \
   -d '{
     "status": "IN_PROGRESS"
   }'
 
-# Update multiple fields at once
-curl -X PATCH http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000 \
+# Update multiple fields at once (enums are case-insensitive)
+curl -X PATCH http://localhost:8080/tasks/607ffb52-c83f-41e0-bcc4-9fe8b2817453 \
   -H "Content-Type: application/json" \
   -d '{
-    "status": "DONE",
+    "status": "done",
     "description": "Completed successfully",
-    "priority": "LOW"
+    "priority": "low"
   }'
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "607ffb52-c83f-41e0-bcc4-9fe8b2817453",
+  "createdAt": 1764550881793,
+  "updatedAt": 1764550882501,
   "title": "Implement REST API",
   "description": "Completed successfully",
   "status": "DONE",
-  "priority": "HIGH",
-  "createdAt": 1701345600000,
-  "updatedAt": 1701351000000
+  "priority": "LOW"
 }
 ```
+**Note**: `updatedAt` timestamp is automatically updated on every PATCH
 
 ---
 
@@ -321,7 +338,7 @@ curl -X PATCH http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000 \
 **Endpoint:** `DELETE /tasks/{id}`
 
 ```bash
-curl -X DELETE http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000
+curl -X DELETE http://localhost:8080/tasks/607ffb52-c83f-41e0-bcc4-9fe8b2817453
 ```
 
 **Response (204 No Content):** *(empty body)*
@@ -339,13 +356,13 @@ curl -X DELETE http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | String (UUID) | Auto-generated | Unique identifier |
+| `id` | String (UUID) | Auto-generated | Unique identifier (cannot be set by user) |
 | `title` | String | Yes | Task title (max 200 chars) |
 | `description` | String | No | Task description (max 1000 chars) |
-| `status` | Enum | Yes | `TODO`, `IN_PROGRESS`, `DONE` |
-| `priority` | Enum | Yes | `LOW`, `MEDIUM`, `HIGH` |
+| `status` | Enum | Yes | `TODO`, `IN_PROGRESS`, `DONE` (case-insensitive) |
+| `priority` | Enum | Yes | `LOW`, `MEDIUM`, `HIGH` (case-insensitive) |
 | `createdAt` | Long | Auto-generated | Creation timestamp (epoch milliseconds) |
-| `updatedAt` | Long | Auto-updated | Last update timestamp (epoch milliseconds) |
+| `updatedAt` | Long | Auto-updated | Last update timestamp (epoch milliseconds, updated on PATCH) |
 
 ## Validation
 
