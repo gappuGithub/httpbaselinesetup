@@ -3,55 +3,103 @@ package com.tasktracker.framework.models;
 import java.util.Map;
 
 /**
- * Generic base interface for all entities in the system.
- * Provides common fields and methods that all entities must implement.
+ * Generic base class for all entities in the system.
+ * Provides common fields (id, createdAt, updatedAt) that all entities inherit.
+ * Subclasses only need to define their entity-specific fields.
  *
  * @param <ID> The type of the entity identifier (e.g., String, Long, UUID)
  */
-public interface Entity<ID> {
+public abstract class Entity<ID> {
+    
+    /**
+     * Unique identifier for this entity
+     */
+    protected ID id;
+    
+    /**
+     * Timestamp when this entity was created (epoch time in milliseconds)
+     */
+    protected Long createdAt;
+    
+    /**
+     * Timestamp when this entity was last updated (epoch time in milliseconds)
+     */
+    protected Long updatedAt;
+    
+    /**
+     * Default constructor.
+     */
+    public Entity() {
+    }
+    
+    /**
+     * Constructor with all common fields.
+     * 
+     * @param id the entity identifier
+     * @param createdAt creation timestamp
+     * @param updatedAt last update timestamp
+     */
+    public Entity(ID id, Long createdAt, Long updatedAt) {
+        this.id = id;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
     
     /**
      * Get the unique identifier of this entity.
      * @return the entity ID
      */
-    ID getId();
+    public ID getId() {
+        return id;
+    }
     
     /**
      * Set the unique identifier of this entity.
      * @param id the entity ID
      */
-    void setId(ID id);
+    public void setId(ID id) {
+        this.id = id;
+    }
     
     /**
      * Get the timestamp when this entity was created (epoch time in milliseconds).
      * @return the creation timestamp in epoch milliseconds
      */
-    Long getCreatedAt();
+    public Long getCreatedAt() {
+        return createdAt;
+    }
     
     /**
      * Set the timestamp when this entity was created (epoch time in milliseconds).
      * @param createdAt the creation timestamp in epoch milliseconds
      */
-    void setCreatedAt(Long createdAt);
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+    }
     
     /**
      * Get the timestamp when this entity was last updated (epoch time in milliseconds).
      * @return the last update timestamp in epoch milliseconds
      */
-    Long getUpdatedAt();
+    public Long getUpdatedAt() {
+        return updatedAt;
+    }
     
     /**
      * Set the timestamp when this entity was last updated (epoch time in milliseconds).
      * @param updatedAt the last update timestamp in epoch milliseconds
      */
-    void setUpdatedAt(Long updatedAt);
+    public void setUpdatedAt(Long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
     
     /**
      * Apply a partial update to this entity from a patch data map.
      * Only the fields present in the patchData should be updated.
+     * Subclasses must implement this method to handle entity-specific fields.
      *
      * @param patchData map of field names to new values
      */
-    void updateFromPatch(Map<String, Object> patchData);
+    public abstract void updateFromPatch(Map<String, Object> patchData);
 }
 

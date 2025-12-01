@@ -8,7 +8,7 @@ A RESTful API service for managing team tasks, built with **Spring Boot** and a 
 - ✅ Full CRUD operations for tasks
 - ✅ Batch GET operations with error tracking
 - ✅ Filtering support (by status, priority, title)
-- ✅ Input validation with detailed error messages
+- ✅ Two-stage validation (schema + business rules) with detailed error messages
 - ✅ Thread-safe in-memory storage
 - ✅ Proper HTTP status codes and REST semantics
 
@@ -37,6 +37,7 @@ rplg/
         │   │   │   └── InMemoryStore.java       # Generic in-memory implementation
         │   │   └── validators/
         │   │       ├── ResourceValidator.java   # Generic validator interface
+        │   │       ├── SchemaValidator.java     # Generic schema/type validator
         │   │       └── ValidationException.java # Validation exception
         │   ├── impl/                            # 📝 APPLICATION IMPLEMENTATION (Task-specific)
         │   │   ├── models/
@@ -68,6 +69,12 @@ mvn clean install
 ```
 
 ### 2. Run the Application
+
+#### 2.1 - Kill the process if the post is busy.
+viagniho@viagniho-mn7262 ~/D/P/rplg (main)> lsof -i:8080
+COMMAND  PID     USER   FD   TYPE            DEVICE SIZE/OFF NODE NAME
+java    1575 viagniho   40u  IPv6 0xfb7c349873af64e      0t0  TCP *:http-alt (LISTEN)
+
 
 ```bash
 mvn spring-boot:run
@@ -150,7 +157,7 @@ curl -X POST http://localhost:8080/tasks \
 {
   "error": "Validation failed",
   "details": {
-    "title": "Title is required and cannot be empty"
+    "title": "Title is required"
   }
 }
 ```
@@ -340,6 +347,33 @@ curl -X DELETE http://localhost:8080/tasks/550e8400-e29b-41d4-a716-446655440000
 | `createdAt` | Long | Auto-generated | Creation timestamp (epoch milliseconds) |
 | `updatedAt` | Long | Auto-updated | Last update timestamp (epoch milliseconds) |
 
+## Validation
+
+The API uses a **two-stage validation approach**:
+
+### Stage 1: Schema Validation (Framework Level)
+- Performed by `SchemaValidator<T>` using reflection
+- Validates field types and structure
+- Handles String → Enum conversion (case-insensitive)
+- Ensures data matches entity schema
+
+### Stage 2: Business Rule Validation (Application Level)
+- Performed by `TaskValidator` (entity-specific)
+- Validates business logic (e.g., length limits, required fields)
+- Uses a switch-case pattern for field-specific rules
+- Same validation logic for both CREATE and PATCH
+
+**Example Validation Errors:**
+```json
+{
+  "error": "Validation failed",
+  "details": {
+    "title": "Title is required",
+    "description": "Description cannot exceed 1000 characters"
+  }
+}
+```
+
 ## HTTP Status Codes
 
 - **200 OK** - Successful GET/PATCH operations
@@ -389,17 +423,20 @@ This project is organized into two main packages:
 2. **`Collection<K, T>` Class** - Universal BatchGet response container
 3. **`ResourceStorageClient<T, ID>`** - Generic storage interface
 4. **`InMemoryStore<T, ID>`** - Thread-safe in-memory implementation
-5. **`ResourceValidator<T>`** - Generic validation interface
-6. **`ValidationException`** - Validation exception class
+5. **`ResourceValidator<T>`** - Generic validation interface (overloaded: `validate(T)` and `validate(Map)`)
+6. **`SchemaValidator<T>`** - Generic schema/type validator using reflection
+7. **`ValidationException`** - Validation exception class
 
 ### 📝 `impl/` - Application Implementation (Task-specific)
 
 **Replace this for new use cases!** Contains Task-specific code:
 
-1. **Task entity** - Implements `Entity<String>`
+1. **Task entity** - Implements `Entity<String>` with reflection-based patching
 2. **TaskStatus & TaskPriority enums** - Domain-specific enums
 3. **TaskStore** - Extends `InMemoryStore` with custom filtering
-4. **TaskValidator** - Implements `ResourceValidator` with Task rules
+4. **TaskValidator** - Implements `ResourceValidator` with two-stage validation:
+   - Stage 1: Schema validation (types/structure via `SchemaValidator`)
+   - Stage 2: Business rules (length limits, required fields, etc.)
 5. **TaskResource** - REST endpoints for Task operations
 
 ### Adding New Entity Types
@@ -410,7 +447,15 @@ To add a new entity (e.g., User, Project):
 2. Replace `impl/` package with your entity:
    - Create `User implements Entity<ID>`
    - Create `UserStore extends InMemoryStore<User, ID>`
-   - Create `UserValidator implements ResourceValidator<User>`
+   - Create `UserValidator implements ResourceValidator<User>`:
+     ```java
+     private final SchemaValidator<User> schemaValidator = new SchemaValidator<>(User.class);
+     
+     public void validate(User user) {
+         schemaValidator.validate(user);  // Stage 1: Schema validation
+         // Add your business rules here    // Stage 2: Business validation
+     }
+     ```
    - Create `UserResource` with REST endpoints
 
 **The framework package never changes!**

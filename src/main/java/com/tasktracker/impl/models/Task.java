@@ -9,11 +9,11 @@ import java.util.Map;
 
 /**
  * Task entity representing a team task.
- * Implements the generic Entity interface with String as the ID type.
+ * Extends the generic Entity class which provides id, createdAt, and updatedAt fields.
  */
-public class Task implements Entity<String> {
+public class Task extends Entity<String> {
     
-    private String id;
+    // Task-specific fields (id, createdAt, updatedAt inherited from Entity)
     
     @NotBlank(message = "Title cannot be empty")
     @Size(max = 200, message = "Title cannot exceed 200 characters")
@@ -28,10 +28,6 @@ public class Task implements Entity<String> {
     @NotNull(message = "Priority is required")
     private TaskPriority priority;
     
-    private Long createdAt;
-    
-    private Long updatedAt;
-    
     /**
      * Default constructor.
      */
@@ -43,23 +39,11 @@ public class Task implements Entity<String> {
      */
     public Task(String id, String title, String description, TaskStatus status, 
                 TaskPriority priority, Long createdAt, Long updatedAt) {
-        this.id = id;
+        super(id, createdAt, updatedAt);
         this.title = title;
         this.description = description;
         this.status = status;
         this.priority = priority;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-    
-    @Override
-    public String getId() {
-        return id;
-    }
-    
-    @Override
-    public void setId(String id) {
-        this.id = id;
     }
     
     public String getTitle() {
@@ -92,26 +76,6 @@ public class Task implements Entity<String> {
     
     public void setPriority(TaskPriority priority) {
         this.priority = priority;
-    }
-    
-    @Override
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-    
-    @Override
-    public void setCreatedAt(Long createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    @Override
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    @Override
-    public void setUpdatedAt(Long updatedAt) {
-        this.updatedAt = updatedAt;
     }
     
     /**
