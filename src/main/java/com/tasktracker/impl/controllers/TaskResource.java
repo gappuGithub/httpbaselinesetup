@@ -140,22 +140,16 @@ public class TaskResource {
             // Validate the patch data
             taskValidator.validate(patchData);
             
-            // Get existing task
-            Optional<Task> existingTask = taskStore.get(id);
-            if (existingTask.isEmpty()) {
+            // Apply the patch via storage layer
+            Optional<Task> patchedTask = taskStore.patch(id, patchData);
+            
+            if (patchedTask.isEmpty()) {
                 Map<String, String> errorResponse = new HashMap<>();
                 errorResponse.put("error", "Task not found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
             
-            // Apply the patch
-            Task task = existingTask.get();
-            task.updateFromPatch(patchData);
-            
-            // Update in storage
-            Optional<Task> updatedTask = taskStore.update(id, task);
-            
-            return ResponseEntity.ok(updatedTask.get());
+            return ResponseEntity.ok(patchedTask.get());
             
         } catch (ValidationException e) {
             Map<String, Object> errorResponse = new HashMap<>();

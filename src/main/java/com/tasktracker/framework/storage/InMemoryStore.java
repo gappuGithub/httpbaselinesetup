@@ -161,6 +161,21 @@ public class InMemoryStore<T extends Entity<ID>, ID> implements ResourceStorageC
     }
     
     /**
+     * Apply a partial update (patch) to an entity.
+     * Default implementation throws UnsupportedOperationException.
+     * Subclasses should override this to provide entity-specific patching logic.
+     *
+     * @param id the ID of the entity to patch
+     * @param patchData map of field names to new values
+     * @return Optional containing the patched entity, or empty if not found
+     */
+    @Override
+    public Optional<T> patch(ID id, Map<String, Object> patchData) {
+        throw new UnsupportedOperationException(
+            "patch() must be implemented in the entity-specific store");
+    }
+    
+    /**
      * Helper method to check if an entity matches the provided filters.
      * This is a simple implementation that converts entity fields to strings for matching.
      *

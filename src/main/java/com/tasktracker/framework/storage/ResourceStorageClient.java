@@ -67,6 +67,16 @@ public interface ResourceStorageClient<T extends Entity<ID>, ID> {
     boolean delete(ID id);
     
     /**
+     * Apply a partial update (patch) to an entity.
+     * Only the fields present in patchData will be updated.
+     *
+     * @param id the ID of the entity to patch
+     * @param patchData map of field names to new values
+     * @return Optional containing the patched entity, or empty if not found
+     */
+    Optional<T> patch(ID id, Map<String, Object> patchData);
+    
+    /**
      * Check if an entity exists by its ID.
      *
      * @param id the entity ID

@@ -6,8 +6,10 @@ import com.tasktracker.impl.models.TaskPriority;
 import com.tasktracker.impl.models.TaskStatus;
 import org.springframework.stereotype.Repository;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +18,82 @@ import java.util.stream.Collectors;
  */
 @Repository
 public class TaskStore extends InMemoryStore<Task, String> {
+    
+    /**
+     * Apply a partial update (patch) to a task using reflection.
+     * Only the fields present in patchData will be updated.
+     *
+     * @param id the ID of the task to patch
+     * @param patchData map of field names to new values
+     * @return Optional containing the patched task, or empty if not found
+     */
+    @Override
+    public Optional<Task> patch(String id, Map<String, Object> patchData) {
+        Optional<Task> existingTask = get(id);
+        if (existingTask.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Task task = existingTask.get();
+        
+        // Apply patch using reflection
+        patchData.forEach((fieldName, value) -> {
+            // Skip ID and timestamp fields - these shouldn't be patched
+            if ("id".equals(fieldName) || "createdAt".equals(fieldName)) {
+                return;
+            }
+            
+            try {
+                // Get the field from the class
+                Field field = task.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                
+                // Handle type conversions
+                Object convertedValue = convertValue(value, field.getType());
+                field.set(task, convertedValue);
+                
+            } catch (NoSuchFieldException e) {
+                // Field doesn't exist - ignore silently (or log if needed)
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Cannot access field: " + fieldName, e);
+            }
+        });
+        
+        // Always update the timestamp
+        task.setUpdatedAt(System.currentTimeMillis());
+        
+        // Save the updated task
+        return update(id, task);
+    }
+    
+    /**
+     * Convert patch value to the appropriate type.
+     * Assumes schema validation has already been performed.
+     * Only handles necessary type conversions (e.g., String → Enum).
+     */
+    private Object convertValue(Object value, Class<?> targetType) {
+        if (value == null) {
+            return null;
+        }
+        
+        // If types already match, return as-is
+        if (targetType.isInstance(value)) {
+            return value;
+        }
+        
+        // String → Enum conversion (only conversion needed for JSON)
+        if (targetType.isEnum() && value instanceof String) {
+            @SuppressWarnings("unchecked")
+            Class<? extends Enum> enumType = (Class<? extends Enum>) targetType;
+            return Enum.valueOf(enumType, ((String) value).toUpperCase());
+        }
+        
+        // No other conversions - Jackson handles everything else
+        // If we reach here, schema validation should have caught it
+        throw new IllegalArgumentException(
+            "Unexpected type mismatch: " + targetType.getSimpleName() + 
+            " vs " + value.getClass().getSimpleName());
+    }
     
     /**
      * List all tasks with proper filtering support for Task-specific fields.

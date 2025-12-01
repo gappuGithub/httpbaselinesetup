@@ -1,7 +1,5 @@
 package com.tasktracker.framework.models;
 
-import java.util.Map;
-
 /**
  * Generic base class for all entities in the system.
  * Provides common fields (id, createdAt, updatedAt) that all entities inherit.
@@ -92,14 +90,5 @@ public abstract class Entity<ID> {
     public void setUpdatedAt(Long updatedAt) {
         this.updatedAt = updatedAt;
     }
-    
-    /**
-     * Apply a partial update to this entity from a patch data map.
-     * Only the fields present in the patchData should be updated.
-     * Subclasses must implement this method to handle entity-specific fields.
-     *
-     * @param patchData map of field names to new values
-     */
-    public abstract void updateFromPatch(Map<String, Object> patchData);
 }
 
